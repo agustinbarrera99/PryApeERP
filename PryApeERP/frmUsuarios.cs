@@ -8,19 +8,24 @@ namespace PryApeERP
     {
         private int _idSeleccionado = 0;
         private readonly UsuarioDAO _dao = new UsuarioDAO();
+        private readonly RedSocialDAO _redDao = new RedSocialDAO();
 
         public frmUsuarios()
         {
             InitializeComponent();
         }
 
+        // ════════════════════════════════════════════════════════════════
+        //  CARGA INICIAL
+        // ════════════════════════════════════════════════════════════════
         private void frmUsuarios_Load(object sender, EventArgs e)
         {
             CargarGrilla();
-            EstadoFormulario(false);
         }
 
-        // ── Grilla ────────────────────────────────────────
+        // ════════════════════════════════════════════════════════════════
+        //  CARGA Y CONFIGURACIÓN DE LA GRILLA PRINCIPAL
+        // ════════════════════════════════════════════════════════════════
         private void CargarGrilla()
         {
             try
@@ -28,158 +33,141 @@ namespace PryApeERP
                 var dt = _dao.ObtenerTodos();
                 dgvUsuarios.DataSource = dt;
 
-                // Ocultar ID
-                if (dgvUsuarios.Columns["Id_usuario"] != null)
-                    dgvUsuarios.Columns["Id_usuario"].Visible = false;
+                // Ocultamos las columnas que pertenecen al detalle/formulario de edición
+                string[] ocultar = {
+                    "Id_usuario", "Contraseña", "Id_localidad",
+                    "geolocalizacion_lat", "geolocalizacion_lng", "dni",
+                    "direccion", "telefono"
+                };
 
-                // Renombrar encabezados
-                if (dgvUsuarios.Columns["nombre"] != null)
-                    dgvUsuarios.Columns["nombre"].HeaderText = "Nombre";
-                if (dgvUsuarios.Columns["apellido"] != null)
-                    dgvUsuarios.Columns["apellido"].HeaderText = "Apellido";
-                if (dgvUsuarios.Columns["mail"] != null)
-                    dgvUsuarios.Columns["mail"].HeaderText = "Email";
-                if (dgvUsuarios.Columns["Contraseña"] != null)
-                    dgvUsuarios.Columns["Contraseña"].Visible = false; // nunca mostrar
-                if (dgvUsuarios.Columns["activo"] != null)
-                    dgvUsuarios.Columns["activo"].HeaderText = "Activo";
+                foreach (var col in ocultar)
+                {
+                    if (dgvUsuarios.Columns[col] != null)
+                        dgvUsuarios.Columns[col].Visible = false;
+                }
+
+                // Renombrado estético de las columnas visibles
+                RenombrarColumna("nombre", "Nombre");
+                RenombrarColumna("apellido", "Apellido");
+                RenombrarColumna("mail", "Email");
+                RenombrarColumna("activo", "Activo");
+                RenombrarColumna("localidad", "Localidad");
+                RenombrarColumna("provincia", "Provincia");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error al cargar usuarios:\n" + ex.Message,
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MostrarError("Error al cargar usuarios", ex.Message);
             }
         }
 
-        private void dgvUsuarios_CellClick(object sender, DataGridViewCellEventArgs e)
+        private void RenombrarColumna(string nombre, string header)
+        {
+            if (dgvUsuarios.Columns[nombre] != null)
+                dgvUsuarios.Columns[nombre].HeaderText = header;
+        }
+
+        // ════════════════════════════════════════════════════════════════
+        //  ACCIONES DEL DASHBOARD (CRUD VIA MODALES)
+        // ════════════════════════════════════════════════════════════════
+
+        // ── Botón Nuevo: Abre el formulario limpio en modo diálogo ──────
+        private void btnNuevo_Click(object sender, EventArgs e)
+        {
+            using (var frmModal = new frmUsuarioModal(0)) // 0 significa nuevo usuario
+            {
+                if (frmModal.ShowDialog(this) == DialogResult.OK)
+                {
+                    MostrarExito("Usuario creado correctamente.");
+                    CargarGrilla(); // Refresca la lista automáticamente
+                }
+            }
+        }
+
+        // ── Doble Click en Fila o Botón Editar: Abre el modal cargado ───
+        private void dgvUsuarios_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
 
             var fila = dgvUsuarios.Rows[e.RowIndex];
             _idSeleccionado = Convert.ToInt32(fila.Cells["Id_usuario"].Value);
-            txtId.Text = _idSeleccionado.ToString();
-            txtNombre.Text = fila.Cells["nombre"].Value?.ToString();
-            txtApellido.Text = fila.Cells["apellido"].Value?.ToString();
-            txtEmail.Text = fila.Cells["mail"].Value?.ToString();
-            txtPassword.Text = "";  // nunca se muestra la contraseña
-            chkActivo.Checked = Convert.ToBoolean(fila.Cells["activo"].Value);
 
-            EstadoFormulario(true);
-        }
-
-        // ── Botones ───────────────────────────────────────
-        private void btnNuevo_Click(object sender, EventArgs e)
-        {
-            LimpiarFormulario();
-            EstadoFormulario(true);
-            txtNombre.Focus();
-        }
-
-        private void btnGuardar_Click(object sender, EventArgs e)
-        {
-            if (!Validar()) return;
-
-            try
+            using (var frmModal = new frmUsuarioModal(_idSeleccionado)) // Pasa el ID seleccionado
             {
-                if (_idSeleccionado == 0)
-                    _dao.Insertar(txtNombre.Text, txtApellido.Text,
-                                  txtEmail.Text, txtPassword.Text, chkActivo.Checked);
-                else
-                    _dao.Actualizar(_idSeleccionado, txtNombre.Text, txtApellido.Text,
-                                    txtEmail.Text, txtPassword.Text, chkActivo.Checked);
-
-                MessageBox.Show("Usuario guardado correctamente.", "Éxito",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                CargarGrilla();
-                LimpiarFormulario();
-                EstadoFormulario(false);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error al guardar:\n" + ex.Message,
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (frmModal.ShowDialog(this) == DialogResult.OK)
+                {
+                    MostrarExito("Usuario actualizado correctamente.");
+                    CargarGrilla(); // Refresca la lista con los cambios
+                }
             }
         }
 
+        // ── Botón Eliminar: Remueve el registro usando tu diálogo personalizado ──
         private void btnEliminar_Click(object sender, EventArgs e)
         {
-            if (_idSeleccionado == 0)
+            if (dgvUsuarios.CurrentRow == null)
             {
-                MessageBox.Show("Seleccioná un usuario primero.");
+                MostrarAviso("Seleccioná un usuario de la lista primero.");
                 return;
             }
 
-            if (MessageBox.Show("¿Eliminar el usuario seleccionado?", "Confirmar",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+            var fila = dgvUsuarios.CurrentRow;
+            _idSeleccionado = Convert.ToInt32(fila.Cells["Id_usuario"].Value);
+            string nombreCompleto = $"{fila.Cells["nombre"].Value} {fila.Cells["apellido"].Value}";
+
+            using (var dlg = new frmConfirmacion(
+                "¿Eliminar usuario?",
+                $"Se eliminará al usuario «{nombreCompleto}» y todas sus redes sociales. Esta acción no se puede deshacer."))
             {
-                try
+                if (dlg.ShowDialog(this) == DialogResult.Yes)
                 {
-                    _dao.Eliminar(_idSeleccionado);
-                    MessageBox.Show("Usuario eliminado.", "Información",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try
+                    {
+                        _redDao.EliminarPorUsuario(_idSeleccionado);
+                        _dao.Eliminar(_idSeleccionado);
 
-                    CargarGrilla();
-                    LimpiarFormulario();
-                    EstadoFormulario(false);
+                        MostrarExito("Usuario eliminado correctamente.");
+                        CargarGrilla();
+                        _idSeleccionado = 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        MostrarError("No se pudo eliminar el usuario", ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error al eliminar:\n" + ex.Message,
-                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
             }
         }
 
-        private void btnCancelar_Click(object sender, EventArgs e)
+        // ════════════════════════════════════════════════════════════════
+        //  NOTIFICACIONES TOAST INLINE
+        // ════════════════════════════════════════════════════════════════
+        private void MostrarExito(string mensaje)
         {
-            LimpiarFormulario();
-            EstadoFormulario(false);
-        }
-        private bool Validar()
-        {
-            if (string.IsNullOrWhiteSpace(txtNombre.Text))
-            {
-                MessageBox.Show("El nombre es obligatorio.", "Validación",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(txtEmail.Text))
-            {
-                MessageBox.Show("El email es obligatorio.", "Validación",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-            if (_idSeleccionado == 0 && string.IsNullOrWhiteSpace(txtPassword.Text))
-            {
-                MessageBox.Show("La contraseña es obligatoria para usuarios nuevos.", "Validación",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return false;
-            }
-            return true;
+            lblToast.Text = "✔  " + mensaje;
+            lblToast.BackColor = System.Drawing.Color.FromArgb(16, 185, 129); // Esmeralda
+            lblToast.Visible = true;
+            timerToast.Start();
         }
 
-        private void LimpiarFormulario()
+        private void MostrarAviso(string mensaje)
         {
-            _idSeleccionado = 0;
-            txtId.Text = "";
-            txtNombre.Text = "";
-            txtApellido.Text = "";
-            txtEmail.Text = "";
-            txtPassword.Text = "";
-            chkActivo.Checked = true;
+            lblToast.Text = "ℹ  " + mensaje;
+            lblToast.BackColor = System.Drawing.Color.FromArgb(245, 158, 11); // Ámbar
+            lblToast.Visible = true;
+            timerToast.Start();
         }
 
-        private void EstadoFormulario(bool edicion)
+        private void MostrarError(string titulo, string detalle)
         {
-            txtNombre.Enabled = edicion;
-            txtApellido.Enabled = edicion;
-            txtEmail.Enabled = edicion;
-            txtPassword.Enabled = edicion;
-            chkActivo.Enabled = edicion;
-            btnGuardar.Enabled = edicion;
-            btnEliminar.Enabled = edicion && _idSeleccionado > 0;
-            btnCancelar.Enabled = edicion;
+            lblToast.Text = $"✖  {titulo}: {detalle}";
+            lblToast.BackColor = System.Drawing.Color.FromArgb(220, 38, 38); // Rojo peligro
+            lblToast.Visible = true;
+            timerToast.Start();
+        }
+
+        private void timerToast_Tick(object sender, EventArgs e)
+        {
+            timerToast.Stop();
+            lblToast.Visible = false;
         }
     }
 }
