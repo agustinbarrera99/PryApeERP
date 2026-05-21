@@ -136,8 +136,6 @@ namespace PryApeERP
             LimpiarFormulario();
             EstadoFormulario(false);
         }
-
-        // ── Helpers ───────────────────────────────────────
         private bool Validar()
         {
             if (string.IsNullOrWhiteSpace(txtNombre.Text))

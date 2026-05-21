@@ -12,19 +12,18 @@ namespace PryApeERP
         public frmPerfiles()
         {
             InitializeComponent();
-        }
-
-        private void frmPerfiles_Load(object sender, EventArgs e)
-        {
-            // Conectar eventos que el designer no agregó
             dgvPerfiles.CellClick += dgvPerfiles_CellClick;
             btnNuevo.Click += btnNuevo_Click;
             btnGuardar.Click += btnGuardar_Click;
             btnEliminar.Click += btnEliminar_Click;
             btnCancelar.Click += btnCancelar_Click;
-
             CargarGrilla();
             EstadoFormulario(false);
+        }
+
+        private void frmPerfiles_Load(object sender, EventArgs e)
+        {
+
         }
 
         // ── Grilla ────────────────────────────────────────

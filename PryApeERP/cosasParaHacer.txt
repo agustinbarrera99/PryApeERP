@@ -1,4 +1,4 @@
-Crear tabla auditoria-sesio
+Crear tabla auditoria-sesion
 grabar desde la clase (fecha-hora-usuario-intentofallido)
 
 frmInicioSesion antes del main que valide que el usuario existe y solo tenga 3 intentos
