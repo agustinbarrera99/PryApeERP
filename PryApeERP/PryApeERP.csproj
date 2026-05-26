@@ -93,7 +93,9 @@
     <Compile Include="frmRelUsuarioPerfil.Designer.cs">
       <DependentUpon>frmRelUsuarioPerfil.cs</DependentUpon>
     </Compile>
-    <Compile Include="frmUsuarioModal.cs" />
+    <Compile Include="frmUsuarioModal.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="frmUsuarioModal.Designer.cs">
       <DependentUpon>frmUsuarioModal.cs</DependentUpon>
     </Compile>
@@ -111,6 +113,7 @@
     <Compile Include="RedSocialDAO.cs" />
     <Compile Include="UsuarioDAO.cs" />
     <Compile Include="ValidacionHelper.cs" />
+    <Compile Include="WebBrowserHelper.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

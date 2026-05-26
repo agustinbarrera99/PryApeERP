@@ -15,17 +15,11 @@ namespace PryApeERP
             InitializeComponent();
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  CARGA INICIAL
-        // ════════════════════════════════════════════════════════════════
+     
         private void frmUsuarios_Load(object sender, EventArgs e)
         {
             CargarGrilla();
         }
-
-        // ════════════════════════════════════════════════════════════════
-        //  CARGA Y CONFIGURACIÓN DE LA GRILLA PRINCIPAL
-        // ════════════════════════════════════════════════════════════════
         private void CargarGrilla()
         {
             try
@@ -33,7 +27,6 @@ namespace PryApeERP
                 var dt = _dao.ObtenerTodos();
                 dgvUsuarios.DataSource = dt;
 
-                // Ocultamos las columnas que pertenecen al detalle/formulario de edición
                 string[] ocultar = {
                     "Id_usuario", "Contraseña", "Id_localidad",
                     "geolocalizacion_lat", "geolocalizacion_lng", "dni",
@@ -66,11 +59,6 @@ namespace PryApeERP
                 dgvUsuarios.Columns[nombre].HeaderText = header;
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  ACCIONES DEL DASHBOARD (CRUD VIA MODALES)
-        // ════════════════════════════════════════════════════════════════
-
-        // ── Botón Nuevo: Abre el formulario limpio en modo diálogo ──────
         private void btnNuevo_Click(object sender, EventArgs e)
         {
             using (var frmModal = new frmUsuarioModal(0)) // 0 significa nuevo usuario
@@ -78,12 +66,11 @@ namespace PryApeERP
                 if (frmModal.ShowDialog(this) == DialogResult.OK)
                 {
                     MostrarExito("Usuario creado correctamente.");
-                    CargarGrilla(); // Refresca la lista automáticamente
+                    CargarGrilla(); 
                 }
             }
         }
 
-        // ── Doble Click en Fila o Botón Editar: Abre el modal cargado ───
         private void dgvUsuarios_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
@@ -100,8 +87,6 @@ namespace PryApeERP
                 }
             }
         }
-
-        // ── Botón Eliminar: Remueve el registro usando tu diálogo personalizado ──
         private void btnEliminar_Click(object sender, EventArgs e)
         {
             if (dgvUsuarios.CurrentRow == null)
@@ -137,9 +122,6 @@ namespace PryApeERP
             }
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  NOTIFICACIONES TOAST INLINE
-        // ════════════════════════════════════════════════════════════════
         private void MostrarExito(string mensaje)
         {
             lblToast.Text = "✔  " + mensaje;

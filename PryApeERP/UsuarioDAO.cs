@@ -12,12 +12,13 @@ namespace PryApeERP
             using (var cx = new clsConexion())
             {
                 string sql = @"SELECT u.Id_usuario, u.nombre, u.apellido, u.mail, u.Contraseña,
-                              u.activo, u.dni, u.direccion, u.telefono,
-                              u.geolocalizacion_lat, u.geolocalizacion_lng,
-                              u.Id_localidad, l.nombre AS localidad, p.Nombre AS provincia
-                       FROM (usuario u 
-                       LEFT JOIN localidad l ON u.Id_localidad = l.Id_localidad)
-                       LEFT JOIN provincia p ON l.Id_provincia = p.Id_provincia";
+                      u.activo, u.dni, u.direccion, u.telefono,
+                      u.geolocalizacion_lat, u.geolocalizacion_lng,
+                      u.Id_localidad, l.nombre AS localidad, 
+                      p.Nombre AS provincia, p.Id_provincia
+               FROM (usuario u 
+               LEFT JOIN localidad l ON u.Id_localidad = l.Id_localidad)
+               LEFT JOIN provincia p ON l.Id_provincia = p.Id_provincia";
                 new OleDbDataAdapter(new OleDbCommand(sql, cx.ObtenerConexion())).Fill(dt);
             }
             return dt;
@@ -38,13 +39,13 @@ namespace PryApeERP
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = apellido;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = mail;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = password;
-                cmd.Parameters.Add("?", OleDbType.Boolean).Value = activo;
+                cmd.Parameters.Add("?", OleDbType.Integer).Value = activo ? -1 : 0;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = dni;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = direccion;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = telefono;
                 cmd.Parameters.Add("?", OleDbType.Integer).Value = idLocalidad;
-                cmd.Parameters.Add("?", OleDbType.Double).Value = lat;
-                cmd.Parameters.Add("?", OleDbType.Double).Value = lng;
+                cmd.Parameters.Add("?", OleDbType.Double).Value = lat == 0 ? (object)DBNull.Value : lat;
+                cmd.Parameters.Add("?", OleDbType.Double).Value = lng == 0 ? (object)DBNull.Value : lng;
                 cmd.ExecuteNonQuery();
             }
         }
@@ -82,13 +83,13 @@ namespace PryApeERP
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = mail;
                 if (!string.IsNullOrWhiteSpace(password))
                     cmd.Parameters.Add("?", OleDbType.VarChar).Value = password;
-                cmd.Parameters.Add("?", OleDbType.Boolean).Value = activo;
+                cmd.Parameters.Add("?", OleDbType.Integer).Value = activo ? -1 : 0;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = dni;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = direccion;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = telefono;
                 cmd.Parameters.Add("?", OleDbType.Integer).Value = idLocalidad;
-                cmd.Parameters.Add("?", OleDbType.Double).Value = lat;
-                cmd.Parameters.Add("?", OleDbType.Double).Value = lng;
+                cmd.Parameters.Add("?", OleDbType.Double).Value = lat == 0 ? (object)DBNull.Value : lat;
+                cmd.Parameters.Add("?", OleDbType.Double).Value = lng == 0 ? (object)DBNull.Value : lng;
                 cmd.Parameters.Add("?", OleDbType.Integer).Value = id;
                 cmd.ExecuteNonQuery();
             }

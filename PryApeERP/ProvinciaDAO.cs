@@ -5,7 +5,7 @@ namespace PryApeERP
 {
     public class ProvinciaDAO
     {
-        public DataTable ObtenerTodos()
+        public DataTable ObtenerTodas()
         {
             var dt = new DataTable();
             using (var cx = new clsConexion())

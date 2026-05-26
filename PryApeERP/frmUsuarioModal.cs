@@ -1,303 +1,375 @@
-﻿namespace PryApeERP
+﻿using System;
+using System.Data;
+using System.Globalization;
+using System.Windows.Forms;
+
+namespace PryApeERP
 {
-    partial class frmUsuarioModal
+    public partial class frmUsuarioModal : Form
     {
-        private System.ComponentModel.IContainer components = null;
+        private readonly int _idUsuario;
+        private readonly UsuarioDAO _dao = new UsuarioDAO();
+        private readonly ProvinciaDAO _provinciaDao = new ProvinciaDAO();
+        private readonly LocalidadDAO _localidadDao = new LocalidadDAO();
 
-        protected override void Dispose(bool disposing)
+        private int _idLocalidadPendiente = 0;
+        private bool _mapaListo = false;
+        private bool _actualizandoDesdeJs = false;
+
+        public frmUsuarioModal(int idUsuario)
         {
-            if (disposing && (components != null)) components.Dispose();
-            base.Dispose(disposing);
+            InitializeComponent();
+            _idUsuario = idUsuario;
         }
 
-        #region Windows Forms Designer generated code
-
-        private void InitializeComponent()
+        private void splitMain_SizeChanged(object sender, EventArgs e)
         {
-            // Inicialización de controles basados en tu arquitectura original
-            this.pnlTop = new System.Windows.Forms.Panel();
-            this.lblTitulo = new System.Windows.Forms.Label();
-            this.pnlFormulario = new System.Windows.Forms.Panel();
-            this.pnlBotonesAccion = new System.Windows.Forms.Panel();
-            this.btnGuardar = new System.Windows.Forms.Button();
-            this.btnCancelar = new System.Windows.Forms.Button();
+            int ancho = splitMain.Width;
+            int min = splitMain.Panel1MinSize + splitMain.Panel2MinSize + splitMain.SplitterWidth;
 
-            // Sección 1
-            this.lblSeccion1 = new System.Windows.Forms.Label();
-            this.lblId = new System.Windows.Forms.Label();
-            this.txtId = new System.Windows.Forms.TextBox();
-            this.lblNombre = new System.Windows.Forms.Label();
-            this.txtNombre = new System.Windows.Forms.TextBox();
-            this.lblErrNombre = new System.Windows.Forms.Label();
-            this.lblApellido = new System.Windows.Forms.Label();
-            this.txtApellido = new System.Windows.Forms.TextBox();
-            this.lblEmail = new System.Windows.Forms.Label();
-            this.txtEmail = new System.Windows.Forms.TextBox();
-            this.lblErrEmail = new System.Windows.Forms.Label();
-            this.lblPassword = new System.Windows.Forms.Label();
-            this.txtPassword = new System.Windows.Forms.TextBox();
-            this.lblErrPassword = new System.Windows.Forms.Label();
-            this.lblActivo = new System.Windows.Forms.Label();
-            this.chkActivo = new System.Windows.Forms.CheckBox();
-            this.lblDni = new System.Windows.Forms.Label();
-            this.txtDni = new System.Windows.Forms.TextBox();
-            this.lblErrDni = new System.Windows.Forms.Label();
-            this.lblTelefono = new System.Windows.Forms.Label();
-            this.txtTelefono = new System.Windows.Forms.TextBox();
-            this.lblErrTelefono = new System.Windows.Forms.Label();
-            this.lblDireccion = new System.Windows.Forms.Label();
-            this.txtDireccion = new System.Windows.Forms.TextBox();
+            if (ancho <= min) return;
 
-            // Sección 2
-            this.lblSeccion2 = new System.Windows.Forms.Label();
-            this.lblProvincia = new System.Windows.Forms.Label();
-            this.cmbProvincia = new System.Windows.Forms.ComboBox();
-            this.lblErrProvincia = new System.Windows.Forms.Label();
-            this.lblLocalidad = new System.Windows.Forms.Label();
-            this.cmbLocalidad = new System.Windows.Forms.ComboBox();
-            this.lblLat = new System.Windows.Forms.Label();
-            this.txtLat = new System.Windows.Forms.TextBox();
-            this.lblErrLat = new System.Windows.Forms.Label();
-            this.lblLng = new System.Windows.Forms.Label();
-            this.txtLng = new System.Windows.Forms.TextBox();
-            this.lblErrLng = new System.Windows.Forms.Label();
+            int distancia = (int)(ancho * 0.50);
+            distancia = Math.Max(distancia, splitMain.Panel1MinSize);
+            distancia = Math.Min(distancia, ancho - splitMain.Panel2MinSize - splitMain.SplitterWidth);
 
-            // Sección 3
-            this.lblSeccion3 = new System.Windows.Forms.Label();
-            this.lblRedes = new System.Windows.Forms.Label();
-            this.cmbRedes = new System.Windows.Forms.ComboBox();
-            this.txtUrlRed = new System.Windows.Forms.TextBox();
-            this.btnAgregarRed = new System.Windows.Forms.Button();
-            this.lblErrUrlRed = new System.Windows.Forms.Label();
-            this.dgvRedesUsuario = new System.Windows.Forms.DataGridView();
-
-            this.pnlTop.SuspendLayout();
-            this.pnlFormulario.SuspendLayout();
-            this.pnlBotonesAccion.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dgvRedesUsuario)).BeginInit();
-            this.SuspendLayout();
-
-            // ── Cabecera Modal ───────────────────────────────────────────
-            this.pnlTop.BackColor = System.Drawing.Color.FromArgb(30, 41, 59); // Un gris azulado elegante
-            this.pnlTop.Controls.Add(this.lblTitulo);
-            this.pnlTop.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pnlTop.Height = 45;
-
-            this.lblTitulo.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblTitulo.ForeColor = System.Drawing.Color.White;
-            this.lblTitulo.Font = new System.Drawing.Font("Segoe UI Semibold", 11F, System.Drawing.FontStyle.Bold);
-            this.lblTitulo.Text = "  👤  Detalle de Usuario";
-            this.lblTitulo.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-
-            // ── Contenedor del Cuerpo (Scroll) ───────────────────────────
-            this.pnlFormulario.AutoScroll = true;
-            this.pnlFormulario.BackColor = System.Drawing.Color.White;
-            this.pnlFormulario.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlFormulario.Location = new System.Drawing.Point(0, 45);
-            this.pnlFormulario.Size = new System.Drawing.Size(810, 410);
-            this.pnlFormulario.Padding = new System.Windows.Forms.Padding(20);
-
-            // [LÓGICA DE POSICIONAMIENTO ORIGINAL DE TU FORMULARIO EN BASE A yBase]
-            int yBase = 15;
-            ConfigurarSeparador(this.lblSeccion1, "Datos del usuario", 20, yBase);
-
-            yBase += 30;
-            ConfigurarLabel(this.lblId, "ID", 20, yBase);
-            ConfigurarLabel(this.lblNombre, "Nombre *", 150, yBase);
-            ConfigurarLabel(this.lblApellido, "Apellido", 490, yBase);
-
-            yBase += 20;
-            ConfigurarTextBox(this.txtId, 20, yBase, 100, true);
-            ConfigurarTextBox(this.txtNombre, 150, yBase, 310);
-            ConfigurarTextBox(this.txtApellido, 490, yBase, 280);
-
-            yBase += 28;
-            ConfigurarErrLabel(this.lblErrNombre, 150, yBase);
-
-            yBase += 18;
-            ConfigurarLabel(this.lblEmail, "Email *", 20, yBase);
-            ConfigurarLabel(this.lblPassword, "Contraseña *", 380, yBase);
-            ConfigurarLabel(this.lblActivo, "Activo", 680, yBase);
-
-            yBase += 20;
-            ConfigurarTextBox(this.txtEmail, 20, yBase, 340);
-            ConfigurarTextBox(this.txtPassword, 380, yBase, 270);
-            this.txtPassword.PasswordChar = '●';
-            this.chkActivo.Location = new System.Drawing.Point(680, yBase + 1);
-            this.chkActivo.Size = new System.Drawing.Size(20, 20);
-
-            yBase += 28;
-            ConfigurarErrLabel(this.lblErrEmail, 20, yBase);
-            ConfigurarErrLabel(this.lblErrPassword, 380, yBase);
-
-            yBase += 18;
-            ConfigurarLabel(this.lblDni, "DNI", 20, yBase);
-            ConfigurarLabel(this.lblTelefono, "Teléfono", 220, yBase);
-            ConfigurarLabel(this.lblDireccion, "Dirección", 420, yBase);
-
-            yBase += 20;
-            ConfigurarTextBox(this.txtDni, 20, yBase, 180);
-            ConfigurarTextBox(this.txtTelefono, 220, yBase, 180);
-            ConfigurarTextBox(this.txtDireccion, 420, yBase, 350);
-
-            yBase += 28;
-            ConfigurarErrLabel(this.lblErrDni, 20, yBase);
-            ConfigurarErrLabel(this.lblErrTelefono, 220, yBase);
-
-            // Ubicación
-            yBase += 18;
-            ConfigurarSeparador(this.lblSeccion2, "Ubicación y geolocalización", 20, yBase);
-
-            yBase += 30;
-            ConfigurarLabel(this.lblProvincia, "Provincia", 20, yBase);
-            ConfigurarLabel(this.lblLocalidad, "Localidad", 240, yBase);
-            ConfigurarLabel(this.lblLat, "Latitud", 490, yBase);
-            ConfigurarLabel(this.lblLng, "Longitud", 640, yBase);
-
-            yBase += 20;
-            ConfigurarCombo(this.cmbProvincia, 20, yBase, 200);
-            ConfigurarCombo(this.cmbLocalidad, 240, yBase, 210);
-            ConfigurarTextBox(this.txtLat, 490, yBase, 120);
-            ConfigurarTextBox(this.txtLng, 640, yBase, 120);
-            this.cmbProvincia.SelectedIndexChanged += new System.EventHandler(this.cmbProvincia_SelectedIndexChanged);
-
-            yBase += 28;
-            ConfigurarErrLabel(this.lblErrProvincia, 20, yBase);
-            ConfigurarErrLabel(this.lblErrLat, 490, yBase);
-            ConfigurarErrLabel(this.lblErrLng, 640, yBase);
-
-            // Redes Sociales
-            yBase += 18;
-            ConfigurarSeparador(this.lblSeccion3, "Redes sociales", 20, yBase);
-
-            yBase += 30;
-            ConfigurarLabel(this.lblRedes, "Red", 20, yBase);
-
-            yBase += 20;
-            ConfigurarCombo(this.cmbRedes, 20, yBase, 180);
-            ConfigurarTextBox(this.txtUrlRed, 210, yBase, 360);
-
-            // Botón Agregar Red inline
-            this.btnAgregarRed.Location = new System.Drawing.Point(580, yBase);
-            this.btnAgregarRed.Size = new System.Drawing.Size(140, 26);
-            this.btnAgregarRed.Text = "➕  Agregar red";
-            this.btnAgregarRed.Click += new System.EventHandler(this.btnAgregarRed_Click);
-
-            yBase += 32;
-            this.dgvRedesUsuario.Location = new System.Drawing.Point(20, yBase);
-            this.dgvRedesUsuario.Size = new System.Drawing.Size(740, 90);
-            this.dgvRedesUsuario.BackgroundColor = System.Drawing.Color.FromArgb(248, 250, 252);
-
-            this.pnlFormulario.Controls.AddRange(new System.Windows.Forms.Control[] {
-                lblSeccion1, lblId, txtId, lblNombre, txtNombre, lblErrNombre, lblApellido, txtApellido,
-                lblEmail, txtEmail, lblErrEmail, lblPassword, txtPassword, lblErrPassword, lblActivo, chkActivo,
-                lblDni, txtDni, lblErrDni, lblTelefono, txtTelefono, lblErrTelefono, lblDireccion, txtDireccion,
-                lblSeccion2, lblProvincia, cmbProvincia, lblErrProvincia, lblLocalidad, cmbLocalidad, lblLat, txtLat, lblErrLat, lblLng, txtLng, lblErrLng,
-                lblSeccion3, lblRedes, cmbRedes, txtUrlRed, btnAgregarRed, dgvRedesUsuario
-            });
-
-            // ── Footer con Botones de Confirmación ───────────────────────
-            this.pnlBotonesAccion.BackColor = System.Drawing.Color.FromArgb(248, 250, 252);
-            this.pnlBotonesAccion.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.pnlBotonesAccion.Height = 55;
-
-            // Botón Guardar
-            this.btnGuardar.BackColor = System.Drawing.Color.FromArgb(5, 150, 105); // Verde Esmeralda
-            this.btnGuardar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnGuardar.FlatAppearance.BorderSize = 0;
-            this.btnGuardar.ForeColor = System.Drawing.Color.White;
-            this.btnGuardar.Font = new System.Drawing.Font("Segoe UI Semibold", 9.5F, System.Drawing.FontStyle.Bold);
-            this.btnGuardar.Location = new System.Drawing.Point(670, 12);
-            this.btnGuardar.Size = new System.Drawing.Size(120, 32);
-            this.btnGuardar.Text = "💾  Guardar";
-            this.btnGuardar.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnGuardar.Click += new System.EventHandler(this.btnGuardar_Click);
-
-            // Botón Cancelar
-            this.btnCancelar.BackColor = System.Drawing.Color.FromArgb(148, 163, 184); // Gris pizarra neutro
-            this.btnCancelar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnCancelar.FlatAppearance.BorderSize = 0;
-            this.btnCancelar.ForeColor = System.Drawing.Color.White;
-            this.btnCancelar.Font = new System.Drawing.Font("Segoe UI Semibold", 9.5F, System.Drawing.FontStyle.Bold);
-            this.btnCancelar.Location = new System.Drawing.Point(540, 12);
-            this.btnCancelar.Size = new System.Drawing.Size(120, 32);
-            this.btnCancelar.Text = "✖  Cancelar";
-            this.btnCancelar.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnCancelar.Click += new System.EventHandler(this.btnCancelar_Click);
-
-            this.pnlBotonesAccion.Controls.AddRange(new System.Windows.Forms.Control[] { this.btnGuardar, this.btnCancelar });
-
-            // ── frmUsuarioModal Base Config ──────────────────────────────
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(810, 520);
-            this.Controls.Add(this.pnlFormulario);
-            this.Controls.Add(this.pnlBotonesAccion);
-            this.Controls.Add(this.pnlTop);
-            this.Font = new System.Drawing.Font("Segoe UI", 9F);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "frmUsuarioModal";
-            this.ShowIcon = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Formulario de Usuario";
-            this.Load += new System.EventHandler(this.frmUsuarioModal_Load);
-
-            this.pnlTop.ResumeLayout(false);
-            this.pnlFormulario.ResumeLayout(false);
-            this.pnlFormulario.PerformLayout();
-            this.pnlBotonesAccion.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dgvRedesUsuario)).EndInit();
-            this.ResumeLayout(false);
+            splitMain.SplitterDistance = distancia;
         }
 
-        // Helpers de Estilos rápidos nativos para simplificar el código generado
-        private void ConfigurarLabel(System.Windows.Forms.Label lbl, string texto, int x, int y)
+        private void frmUsuarioModal_Load(object sender, EventArgs e)
         {
-            lbl.Text = texto; lbl.Location = new System.Drawing.Point(x, y); lbl.AutoSize = true;
-            lbl.ForeColor = System.Drawing.Color.FromArgb(71, 85, 105); lbl.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular);
+            try
+            {
+                int ancho = splitMain.Width;
+                int distancia = (int)(ancho * 0.50);
+                distancia = Math.Max(distancia, splitMain.Panel1MinSize);
+                distancia = Math.Min(distancia, ancho - splitMain.Panel2MinSize - splitMain.SplitterWidth);
+                if (distancia > splitMain.Panel1MinSize)
+                    splitMain.SplitterDistance = distancia;
+            }
+            catch { /* ignorar si el tamaño aún no está listo */ }
+
+            CargarProvincias();
+            CargarMapa();
+
+            if (_idUsuario > 0)
+            {
+                this.Text = "Editar Usuario";
+                lblTitulo.Text = "  ✏️   Editar Usuario";
+                lblPassword.Text = "Nueva contraseña (dejar vacío para no cambiar)";
+                CargarDatosUsuario();
+            }
+            else
+            {
+                this.Text = "Nuevo Usuario";
+                lblTitulo.Text = "  ➕   Nuevo Usuario";
+            }
         }
-        private void ConfigurarTextBox(System.Windows.Forms.TextBox txt, int x, int y, int w, bool readOnly = false)
+        private void CargarMapa()
         {
-            txt.Location = new System.Drawing.Point(x, y); txt.Width = w; txt.ReadOnly = readOnly;
-            txt.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle; txt.Font = new System.Drawing.Font("Segoe UI", 9.5F);
-            if (readOnly) txt.BackColor = System.Drawing.Color.FromArgb(241, 245, 249);
-        }
-        private void ConfigurarCombo(System.Windows.Forms.ComboBox cmb, int x, int y, int w)
-        {
-            cmb.Location = new System.Drawing.Point(x, y); cmb.Width = w; cmb.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-        }
-        private void ConfigurarSeparador(System.Windows.Forms.Label lbl, string titulo, int x, int y)
-        {
-            lbl.Text = "─── " + titulo + " ──────────────────────────────────"; lbl.Location = new System.Drawing.Point(x, y);
-            lbl.Font = new System.Drawing.Font("Segoe UI Semibold", 10F, System.Drawing.FontStyle.Bold); lbl.ForeColor = System.Drawing.Color.FromArgb(30, 41, 59); lbl.AutoSize = true;
-        }
-        private void ConfigurarErrLabel(System.Windows.Forms.Label lbl, int x, int y)
-        {
-            lbl.Location = new System.Drawing.Point(x, y); lbl.ForeColor = System.Drawing.Color.Red; lbl.Font = new System.Drawing.Font("Segoe UI", 8F); lbl.Visible = false; lbl.AutoSize = true;
+            string html = @"<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'/>
+<style>
+  html, body, #map { margin:0; padding:0; width:100%; height:100%; }
+</style>
+<link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'/>
+<script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+</head>
+<body>
+<div id='map'></div>
+<script>
+  var map = L.map('map').setView([-31.4, -64.18], 7); // Centro en Córdoba, Argentina
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  var marker = null;
+
+  map.on('click', function(e) {
+    var lat = e.latlng.lat.toFixed(6);
+    var lng = e.latlng.lng.toFixed(6);
+
+    if (marker) {
+      marker.setLatLng(e.latlng);
+    } else {
+      marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+      marker.on('dragend', function(ev) {
+        var p = ev.target.getLatLng();
+        notificarCoordenadas(p.lat.toFixed(6), p.lng.toFixed(6));
+      });
+    }
+    notificarCoordenadas(lat, lng);
+  });
+
+  function notificarCoordenadas(lat, lng) {
+    // Llama a C# a través del objeto window.external
+    window.external.SetCoordenadas(lat, lng);
+  }
+
+  // Llamado desde C# para poner el marcador en coordenadas conocidas
+  function irACoordenadas(lat, lng) {
+    var latlng = L.latLng(lat, lng);
+    map.setView(latlng, 14);
+    if (marker) {
+      marker.setLatLng(latlng);
+    } else {
+      marker = L.marker(latlng, { draggable: true }).addTo(map);
+      marker.on('dragend', function(ev) {
+        var p = ev.target.getLatLng();
+        notificarCoordenadas(p.lat.toFixed(6), p.lng.toFixed(6));
+      });
+    }
+  }
+</script>
+</body>
+</html>";
+
+            webMapa.Navigate("about:blank");
+            webMapa.Document?.OpenNew(true);
+            webMapa.DocumentText = html;
         }
 
-        #endregion
+        private void webMapa_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            _mapaListo = true;
 
-        private System.Windows.Forms.Panel pnlTop;
-        private System.Windows.Forms.Label lblTitulo;
-        private System.Windows.Forms.Panel pnlFormulario;
-        private System.Windows.Forms.Panel pnlBotonesAccion;
-        private System.Windows.Forms.Button btnGuardar;
-        private System.Windows.Forms.Button btnCancelar;
+            webMapa.ObjectForScripting = new MapaScriptHelper(this);
 
-        // Elementos Dinámicos
-        private System.Windows.Forms.Label lblSeccion1, lblSeccion2, lblSeccion3;
-        private System.Windows.Forms.Label lblId, lblNombre, lblApellido, lblEmail, lblPassword, lblActivo, lblDni, lblTelefono, lblDireccion;
-        private System.Windows.Forms.TextBox txtId, txtNombre, txtApellido, txtEmail, txtPassword, txtDni, txtTelefono, txtDireccion;
-        private System.Windows.Forms.Label lblErrNombre, lblErrEmail, lblErrPassword, lblErrDni, lblErrTelefono;
-        private System.Windows.Forms.CheckBox chkActivo;
-        private System.Windows.Forms.Label lblProvincia, lblLocalidad, lblLat, lblLng;
-        private System.Windows.Forms.ComboBox cmbProvincia, cmbLocalidad, cmbRedes;
-        private System.Windows.Forms.Label lblErrProvincia, lblErrLat, lblErrLng, lblErrUrlRed;
-        private System.Windows.Forms.TextBox txtLat, txtLng, txtUrlRed;
-        private System.Windows.Forms.Button btnAgregarRed;
-        private System.Windows.Forms.DataGridView dgvRedesUsuario;
+            if (double.TryParse(txtLat.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double lat)
+             && double.TryParse(txtLng.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double lng)
+             && lat != 0 && lng != 0)
+            {
+                MoverMarcador(lat, lng);
+            }
+        }
+        internal void RecibirCoordenadas(string lat, string lng)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action<string, string>(RecibirCoordenadas), lat, lng);
+                return;
+            }
+            _actualizandoDesdeJs = true;
+            txtLat.Text = lat;
+            txtLng.Text = lng;
+            _actualizandoDesdeJs = false;
+        }
+        private void txtCoords_TextChanged(object sender, EventArgs e)
+        {
+            if (_actualizandoDesdeJs || !_mapaListo) return;
+
+            if (double.TryParse(txtLat.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double lat)
+             && double.TryParse(txtLng.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double lng))
+            {
+                MoverMarcador(lat, lng);
+            }
+        }
+
+        private void MoverMarcador(double lat, double lng)
+        {
+            try
+            {
+                webMapa.Document?.InvokeScript("irACoordenadas",
+                    new object[] {
+                        lat.ToString(CultureInfo.InvariantCulture),
+                        lng.ToString(CultureInfo.InvariantCulture)
+                    });
+            }
+            catch { /* el documento puede no estar listo aún */ }
+        }
+        private void CargarProvincias()
+        {
+            try
+            {
+                var dt = _provinciaDao.ObtenerTodas();
+                cboProvincia.DisplayMember = "Nombre";
+                cboProvincia.ValueMember = "Id_provincia";
+                cboProvincia.DataSource = dt;
+                cboProvincia.SelectedIndex = -1;
+
+                cboLocalidad.Enabled = false;
+                cboLocalidad.DataSource = null;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar provincias: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void cboProvincia_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cboProvincia.SelectedValue == null) return;
+
+            try
+            {
+                var rowView = cboProvincia.SelectedItem as System.Data.DataRowView;
+                if (rowView == null) return;
+                int idProvincia = Convert.ToInt32(rowView["Id_provincia"]);
+
+                var dt = _localidadDao.ObtenerPorProvincia(idProvincia);
+                cboLocalidad.DisplayMember = "nombre";
+                cboLocalidad.ValueMember = "Id_localidad";
+                cboLocalidad.DataSource = dt;
+                cboLocalidad.SelectedIndex = -1;
+                cboLocalidad.Enabled = true;
+                cboLocalidad.BackColor = System.Drawing.SystemColors.Window;
+
+                if (_idLocalidadPendiente > 0)
+                {
+                    cboLocalidad.SelectedValue = _idLocalidadPendiente;
+                    _idLocalidadPendiente = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar localidades: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void CargarDatosUsuario()
+        {
+            try
+            {
+                var dt = _dao.ObtenerTodos();
+                DataRow[] rows = dt.Select($"Id_usuario = {_idUsuario}");
+                if (rows.Length == 0) return;
+
+                DataRow r = rows[0];
+                txtNombre.Text = r["nombre"].ToString();
+                txtApellido.Text = r["apellido"].ToString();
+                txtMail.Text = r["mail"].ToString();
+                txtDni.Text = r["dni"].ToString();
+                txtDireccion.Text = r["direccion"].ToString();
+                txtTelefono.Text = r["telefono"].ToString();
+                chkActivo.Checked = Convert.ToBoolean(r["activo"]);
+
+                if (r["geolocalizacion_lat"] != DBNull.Value)
+                    txtLat.Text = r["geolocalizacion_lat"].ToString();
+                if (r["geolocalizacion_lng"] != DBNull.Value)
+                    txtLng.Text = r["geolocalizacion_lng"].ToString();
+
+                if (r["Id_localidad"] != DBNull.Value)
+                    _idLocalidadPendiente = Convert.ToInt32(r["Id_localidad"]);
+
+                if (r["Id_provincia"] != DBNull.Value)
+                    cboProvincia.SelectedValue = Convert.ToInt32(r["Id_provincia"]);
+                else
+                    SeleccionarProvinciaPorLocalidad(_idLocalidadPendiente);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar el usuario: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void SeleccionarProvinciaPorLocalidad(int idLocalidad)
+        {
+            try
+            {
+                int idProvincia = _localidadDao.ObtenerIdProvinciaPorLocalidad(idLocalidad);
+                if (idProvincia > 0)
+                    cboProvincia.SelectedValue = idProvincia;
+            }
+            catch { }
+        }
+        private bool Validar()
+        {
+            if (string.IsNullOrWhiteSpace(txtNombre.Text))
+            { MostrarAviso("El nombre es obligatorio."); txtNombre.Focus(); return false; }
+
+            if (string.IsNullOrWhiteSpace(txtApellido.Text))
+            { MostrarAviso("El apellido es obligatorio."); txtApellido.Focus(); return false; }
+
+            if (string.IsNullOrWhiteSpace(txtMail.Text) || !txtMail.Text.Contains("@"))
+            { MostrarAviso("Ingresá un email válido."); txtMail.Focus(); return false; }
+
+            if (_idUsuario == 0 && string.IsNullOrWhiteSpace(txtPassword.Text))
+            { MostrarAviso("La contraseña es obligatoria para nuevos usuarios."); txtPassword.Focus(); return false; }
+
+            if (cboProvincia.SelectedValue == null)
+            { MostrarAviso("Seleccioná una provincia."); cboProvincia.Focus(); return false; }
+
+            if (cboLocalidad.SelectedValue == null)
+            { MostrarAviso("Seleccioná una localidad."); cboLocalidad.Focus(); return false; }
+
+            return true;
+        }
+        private void btnGuardar_Click(object sender, EventArgs e)
+        {
+            if (!Validar()) return;
+
+            try
+            {
+                string nombre = txtNombre.Text.Trim();
+                string apellido = txtApellido.Text.Trim();
+                string mail = txtMail.Text.Trim();
+                string password = txtPassword.Text.Trim();
+                bool activo = chkActivo.Checked;
+                string dni = txtDni.Text.Trim();
+                string direccion = txtDireccion.Text.Trim();
+                string telefono = txtTelefono.Text.Trim();
+                int idLoc = Convert.ToInt32(cboLocalidad.SelectedValue);
+
+                double.TryParse(txtLat.Text.Replace(",", "."), NumberStyles.Any,
+                    CultureInfo.InvariantCulture, out double lat);
+                double.TryParse(txtLng.Text.Replace(",", "."), NumberStyles.Any,
+                    CultureInfo.InvariantCulture, out double lng);
+
+                if (_idUsuario == 0)
+                    _dao.Insertar(nombre, apellido, mail, password, activo, dni, direccion, telefono, idLoc, lat, lng);
+                else
+                    _dao.Actualizar(_idUsuario, nombre, apellido, mail, password, activo, dni, direccion, telefono, idLoc, lat, lng);
+
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al guardar: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnCancelar_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
+        }
+
+        private void MostrarAviso(string mensaje)
+        {
+            lblToast.Text = "ℹ  " + mensaje;
+            lblToast.BackColor = System.Drawing.Color.FromArgb(245, 158, 11);
+            lblToast.Visible = true;
+            timerToast.Start();
+        }
+
+        private void timerToast_Tick(object sender, EventArgs e)
+        {
+            timerToast.Stop();
+            lblToast.Visible = false;
+        }
+    }
+
+   
+    [System.Runtime.InteropServices.ComVisible(true)]
+    public class MapaScriptHelper
+    {
+        private readonly frmUsuarioModal _form;
+
+        public MapaScriptHelper(frmUsuarioModal form)
+        {
+            _form = form;
+        }
+
+        public void SetCoordenadas(string lat, string lng)
+        {
+            _form.RecibirCoordenadas(lat, lng);
+        }
     }
 }
