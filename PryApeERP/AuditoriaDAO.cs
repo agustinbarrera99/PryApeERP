@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Data.OleDb;
 
 namespace PryApeERP
@@ -22,6 +23,19 @@ namespace PryApeERP
 
                 cmd.ExecuteNonQuery();
             }
+        }
+        public DataTable ObtenerTodos()
+        {
+            var dt = new DataTable();
+            using (var cx = new clsConexion())
+            {
+                string sql = @"SELECT a.Id_auditoria, a.Id_usuario, a.mail, 
+                              a.fecha_hora, a.exitoso, a.intentos_restantes
+                       FROM auditoria_sesion a
+                       ORDER BY a.fecha_hora DESC";
+                new OleDbDataAdapter(new OleDbCommand(sql, cx.ObtenerConexion())).Fill(dt);
+            }
+            return dt;
         }
     }
 }

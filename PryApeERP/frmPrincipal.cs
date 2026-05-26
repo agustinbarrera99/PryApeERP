@@ -7,6 +7,7 @@ namespace PryApeERP
     public partial class frmPrincipal : Form
     {
         public string UsuarioActivo { get; set; } = "Admin";
+        public int PerfilActivo { get; set; } = 0;
 
         public frmPrincipal()
         {
@@ -17,7 +18,15 @@ namespace PryApeERP
         {
             lblUsuarioActivo.Text = $"👤 {UsuarioActivo}";
             ActualizarReloj();
+
+            mnuAuditoria.Visible = (PerfilActivo == 2);  
+
             MostrarBienvenida();
+        }
+
+        private void mnuAuditoria_Click(object sender, EventArgs e)
+        {
+            AbrirFormulario(new frmAuditoria()); 
         }
         private void mnuUsuarios_Click(object sender, EventArgs e)
         {
@@ -115,6 +124,13 @@ namespace PryApeERP
             flp.Controls.Add(CrearTarjeta("🔗", "Asignación",
                 "Vincular usuarios con\nsus perfiles de seguridad.",
                 Color.FromArgb(245, 158, 11), mnuRelUsuarioPerfil_Click));
+
+            if (PerfilActivo == 2)
+            {
+                flp.Controls.Add(CrearTarjeta("🔍", "Auditoría",
+                    "Historial de intentos\nde inicio de sesión.",
+                    Color.FromArgb(139, 92, 246), mnuAuditoria_Click));
+            }
 
             pnl.Controls.Add(flp);
             pnl.Controls.Add(lbl);

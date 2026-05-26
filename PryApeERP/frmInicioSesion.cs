@@ -28,11 +28,10 @@ namespace PryApeERP
 
             try
             {
-                int idUsuario = _dao.ValidarLogin(mail, password);
+                int idUsuario;
+                int idPerfil;
+                (idUsuario, idPerfil) = _dao.ValidarLogin(mail, password);
                 bool exitoso = idUsuario > 0;
-
-                // Grabamos el intento siempre (exitoso o no)
-                // Si falló, Id_usuario = 0 (desconocido)
                 _auditoria.RegistrarIntento(
                     exitoso ? idUsuario : 0,
                     mail,
@@ -44,6 +43,7 @@ namespace PryApeERP
                 {
                     frmPrincipal frm = new frmPrincipal();
                     frm.UsuarioActivo = mail;
+                    frm.PerfilActivo = idPerfil; 
                     this.Hide();
                     frm.ShowDialog();
                     this.Close();

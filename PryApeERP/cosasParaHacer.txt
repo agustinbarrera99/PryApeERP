@@ -1,6 +1,5 @@
-Crear tabla auditoria-sesion
-grabar desde la clase (fecha-hora-usuario-intentofallido)
+Agregar a la tabla auditoria a que formularios ingreso el usuario.
 
-frmInicioSesion antes del main que valide que el usuario existe y solo tenga 3 intentos
-sino lo saco del sistema, mostrar en main usuario, rol-perfil y fecha-hora.
+Pantalla solo para admin, ver y filtrar la informacion de auditoria.
+
 

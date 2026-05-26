@@ -50,17 +50,25 @@ namespace PryApeERP
             }
         }
 
-        public int ValidarLogin(string mail, string password)
+        public (int idUsuario, int idPerfil) ValidarLogin(string mail, string password)
         {
             using (var cx = new clsConexion())
             {
-                string sql = @"SELECT Id_usuario FROM usuario 
-                       WHERE mail = ? AND Contraseña = ? AND activo = -1";
+                string sql = @"SELECT u.Id_usuario, r.Id_perfil 
+               FROM usuario u
+               LEFT JOIN usuario_perfil r ON u.Id_usuario = r.Id_usuario
+               WHERE u.mail = ? AND u.Contraseña = ? AND u.activo = -1";
                 var cmd = new OleDbCommand(sql, cx.ObtenerConexion());
                 cmd.Parameters.AddWithValue("?", mail);
                 cmd.Parameters.AddWithValue("?", password);
-                var resultado = cmd.ExecuteScalar();
-                return resultado != null ? Convert.ToInt32(resultado) : -1;
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                        return (Convert.ToInt32(reader["Id_usuario"]),
+                                reader["Id_perfil"] == DBNull.Value ? 0 : Convert.ToInt32(reader["Id_perfil"]));
+                }
+                return (-1, -1);
             }
         }
 
