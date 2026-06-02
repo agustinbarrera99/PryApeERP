@@ -11,6 +11,7 @@ namespace PryApeERP
         public frmAuditoria()
         {
             InitializeComponent();
+            UIHelper.AplicarIcono(this);
             this.Text = "Auditoría de Sesiones";
         }
 

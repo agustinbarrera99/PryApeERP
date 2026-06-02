@@ -19,6 +19,7 @@ namespace PryApeERP
         public frmUsuarioModal(int idUsuario)
         {
             InitializeComponent();
+            UIHelper.AplicarIcono(this);
             _idUsuario = idUsuario;
         }
 

@@ -12,6 +12,7 @@ namespace PryApeERP
         public frmInicioSesion()
         {
             InitializeComponent();
+            UIHelper.AplicarIcono(this);
         }
 
         private void btnIngresar_Click(object sender, EventArgs e)
@@ -70,6 +71,11 @@ namespace PryApeERP
                 MessageBox.Show("Error al iniciar sesión:\n" + ex.Message,
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void chkMostrarPassword_CheckedChanged(object sender, EventArgs e)
+        {
+            txtPassword.PasswordChar = chkMostrarPassword.Checked ? '\0' : '●';
         }
 
         private void btnSalir_Click(object sender, EventArgs e) => Application.Exit();

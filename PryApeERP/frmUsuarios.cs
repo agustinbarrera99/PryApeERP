@@ -13,6 +13,7 @@ namespace PryApeERP
         public frmUsuarios()
         {
             InitializeComponent();
+            UIHelper.AplicarIcono(this);
         }
 
      

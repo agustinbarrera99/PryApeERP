@@ -12,6 +12,7 @@ namespace PryApeERP
         public frmPrincipal()
         {
             InitializeComponent();
+            UIHelper.AplicarIcono(this);
         }
 
         private void frmPrincipal_Load(object sender, EventArgs e)

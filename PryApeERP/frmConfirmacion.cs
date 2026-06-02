@@ -9,7 +9,7 @@ namespace PryApeERP
         public frmConfirmacion(string titulo, string mensaje)
         {
             InitializeComponent();
-
+            UIHelper.AplicarIcono(this);
             this.Text = titulo;
             this.lblTitulo.Text = titulo;
             this.lblMensaje.Text = mensaje;
