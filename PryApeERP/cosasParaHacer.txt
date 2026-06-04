@@ -1,5 +1,9 @@
-Agregar a la tabla auditoria a que formularios ingreso el usuario.
+Mejorar las validaciones al crear y editar un usuario.
 
-Pantalla solo para admin, ver y filtrar la informacion de auditoria.
+Agregar posibilidad de mas de un domicilio.
 
+Eliminar el boton para eliminar usuarios.
 
+Agregar boton editar usuario.
+
+Agregar contacto al usuario.
