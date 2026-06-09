@@ -11,29 +11,61 @@ namespace PryApeERP
             var dt = new DataTable();
             using (var cx = new clsConexion())
             {
-                string sql = @"SELECT u.Id_usuario, u.nombre, u.apellido, u.mail, u.Contraseña,
-                      u.activo, u.dni, u.direccion, u.telefono,
-                      u.geolocalizacion_lat, u.geolocalizacion_lng,
-                      u.Id_localidad, l.nombre AS localidad, 
-                      p.Nombre AS provincia, p.Id_provincia
-               FROM (usuario u 
-               LEFT JOIN localidad l ON u.Id_localidad = l.Id_localidad)
-               LEFT JOIN provincia p ON l.Id_provincia = p.Id_provincia";
+                // Trae los usuarios base
+                string sql = @"SELECT u.Id_usuario, u.nombre, u.apellido, 
+                              u.mail, u.Contraseña, u.activo, 
+                              u.dni, u.telefono
+                       FROM usuario u";
                 new OleDbDataAdapter(new OleDbCommand(sql, cx.ObtenerConexion())).Fill(dt);
             }
+
+            // Agrega columnas para el domicilio principal
+            dt.Columns.Add("direccion", typeof(string));
+            dt.Columns.Add("localidad", typeof(string));
+            dt.Columns.Add("provincia", typeof(string));
+
+            // Por cada usuario, busca su domicilio principal
+            foreach (DataRow row in dt.Rows)
+            {
+                int idUsuario = Convert.ToInt32(row["Id_usuario"]);
+                DataRow dom = ObtenerDomicilioPrincipal(idUsuario);
+                if (dom != null)
+                {
+                    row["direccion"] = dom["direccion"];
+                    row["localidad"] = dom["localidad"];
+                    row["provincia"] = dom["provincia"];
+                }
+            }
+
             return dt;
         }
 
-        public void Insertar(string nombre, string apellido, string mail, string password,
-                             bool activo, string dni, string direccion, string telefono,
-                             int idLocalidad, double lat, double lng)
+        // Método separado para obtener el domicilio principal de un usuario
+        public DataRow ObtenerDomicilioPrincipal(int idUsuario)
+        {
+            var dt = new DataTable();
+            using (var cx = new clsConexion())
+            {
+                string sql = @"SELECT ud.direccion, l.nombre AS localidad, p.Nombre AS provincia
+                       FROM (usuario_domicilio ud
+                       LEFT JOIN localidad l ON ud.Id_localidad = l.Id_localidad)
+                       LEFT JOIN provincia p ON l.Id_provincia = p.Id_provincia
+                       WHERE ud.Id_usuario = ? AND ud.principal = -1";
+                var cmd = new OleDbCommand(sql, cx.ObtenerConexion());
+                cmd.Parameters.Add("?", OleDbType.Integer).Value = idUsuario;
+                new OleDbDataAdapter(cmd).Fill(dt);
+            }
+            return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+        }
+
+        public int Insertar(string nombre, string apellido, string mail, string password,
+                    bool activo, string dni, string telefono)
         {
             using (var cx = new clsConexion())
             {
-                string sql = @"INSERT INTO usuario (nombre, apellido, mail, Contraseña, activo,
-                                           dni, direccion, telefono, Id_localidad,
-                                           geolocalizacion_lat, geolocalizacion_lng)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                string sql = @"INSERT INTO usuario 
+                       (nombre, apellido, mail, Contraseña, activo, dni, telefono)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)";
                 var cmd = new OleDbCommand(sql, cx.ObtenerConexion());
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = nombre;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = apellido;
@@ -41,12 +73,11 @@ namespace PryApeERP
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = password;
                 cmd.Parameters.Add("?", OleDbType.Integer).Value = activo ? -1 : 0;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = dni;
-                cmd.Parameters.Add("?", OleDbType.VarChar).Value = direccion;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = telefono;
-                cmd.Parameters.Add("?", OleDbType.Integer).Value = idLocalidad;
-                cmd.Parameters.Add("?", OleDbType.Double).Value = lat == 0 ? (object)DBNull.Value : lat;
-                cmd.Parameters.Add("?", OleDbType.Double).Value = lng == 0 ? (object)DBNull.Value : lng;
                 cmd.ExecuteNonQuery();
+
+                var cmdId = new OleDbCommand("SELECT @@IDENTITY", cx.ObtenerConexion());
+                return Convert.ToInt32(cmdId.ExecuteScalar());
             }
         }
 
@@ -72,19 +103,17 @@ namespace PryApeERP
             }
         }
 
-        public void Actualizar(int id, string nombre, string apellido, string mail, string password,
-                               bool activo, string dni, string direccion, string telefono,
-                               int idLocalidad, double lat, double lng)
+        public void Actualizar(int id, string nombre, string apellido, string mail,
+                        string password, bool activo, string dni, string telefono)
         {
             using (var cx = new clsConexion())
             {
                 string sql = string.IsNullOrWhiteSpace(password)
-                    ? @"UPDATE usuario SET nombre=?, apellido=?, mail=?, activo=?, dni=?,
-                direccion=?, telefono=?, Id_localidad=?, geolocalizacion_lat=?,
-                geolocalizacion_lng=? WHERE Id_usuario=?"
-                    : @"UPDATE usuario SET nombre=?, apellido=?, mail=?, Contraseña=?, activo=?, dni=?,
-                direccion=?, telefono=?, Id_localidad=?, geolocalizacion_lat=?,
-                geolocalizacion_lng=? WHERE Id_usuario=?";
+                    ? @"UPDATE usuario SET nombre=?, apellido=?, mail=?, activo=?,
+                dni=?, telefono=? WHERE Id_usuario=?"
+                    : @"UPDATE usuario SET nombre=?, apellido=?, mail=?, Contraseña=?,
+                activo=?, dni=?, telefono=? WHERE Id_usuario=?";
+
                 var cmd = new OleDbCommand(sql, cx.ObtenerConexion());
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = nombre;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = apellido;
@@ -93,11 +122,7 @@ namespace PryApeERP
                     cmd.Parameters.Add("?", OleDbType.VarChar).Value = password;
                 cmd.Parameters.Add("?", OleDbType.Integer).Value = activo ? -1 : 0;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = dni;
-                cmd.Parameters.Add("?", OleDbType.VarChar).Value = direccion;
                 cmd.Parameters.Add("?", OleDbType.VarChar).Value = telefono;
-                cmd.Parameters.Add("?", OleDbType.Integer).Value = idLocalidad;
-                cmd.Parameters.Add("?", OleDbType.Double).Value = lat == 0 ? (object)DBNull.Value : lat;
-                cmd.Parameters.Add("?", OleDbType.Double).Value = lng == 0 ? (object)DBNull.Value : lng;
                 cmd.Parameters.Add("?", OleDbType.Integer).Value = id;
                 cmd.ExecuteNonQuery();
             }

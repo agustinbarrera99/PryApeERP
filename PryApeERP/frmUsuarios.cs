@@ -28,23 +28,16 @@ namespace PryApeERP
                 var dt = _dao.ObtenerTodos();
                 dgvUsuarios.DataSource = dt;
 
-                string[] ocultar = {
-                    "Id_usuario", "Contraseña", "Id_localidad",
-                    "geolocalizacion_lat", "geolocalizacion_lng", "dni",
-                    "direccion", "telefono"
-                };
-
+                string[] ocultar = { "Id_usuario", "Contraseña", "dni", "telefono" };
                 foreach (var col in ocultar)
-                {
                     if (dgvUsuarios.Columns[col] != null)
                         dgvUsuarios.Columns[col].Visible = false;
-                }
 
-                // Renombrado estético de las columnas visibles
                 RenombrarColumna("nombre", "Nombre");
                 RenombrarColumna("apellido", "Apellido");
                 RenombrarColumna("mail", "Email");
                 RenombrarColumna("activo", "Activo");
+                RenombrarColumna("direccion", "Dirección");
                 RenombrarColumna("localidad", "Localidad");
                 RenombrarColumna("provincia", "Provincia");
             }

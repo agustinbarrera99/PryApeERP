@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="AuditoriaDAO.cs" />
     <Compile Include="clsConexion.cs" />
+    <Compile Include="DomicilioDAO.cs" />
     <Compile Include="frmAuditoria.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -77,6 +78,12 @@
     </Compile>
     <Compile Include="frmConfirmacion.Designer.cs">
       <DependentUpon>frmConfirmacion.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmDomicilioModal.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmDomicilioModal.Designer.cs">
+      <DependentUpon>frmDomicilioModal.cs</DependentUpon>
     </Compile>
     <Compile Include="frmInicioSesion.cs">
       <SubType>Form</SubType>
