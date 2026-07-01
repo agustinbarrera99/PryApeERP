@@ -1,6 +1,9 @@
-Crear tabla auditoria-sesion
-grabar desde la clase (fecha-hora-usuario-intentofallido)
+Mejorar las validaciones al crear y editar un usuario.
 
-frmInicioSesion antes del main que valide que el usuario existe y solo tenga 3 intentos
-sino lo saco del sistema, mostrar en main usuario, rol-perfil y fecha-hora.
+Agregar posibilidad de mas de un domicilio.
 
+Eliminar el boton para eliminar usuarios.
+
+Agregar boton editar usuario.
+
+Agregar contacto al usuario.
