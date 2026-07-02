@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Data;
 using System.Windows.Forms;
-
 namespace PryApeERP
 {
     public partial class frmPerfiles : Form
@@ -12,6 +11,19 @@ namespace PryApeERP
         public frmPerfiles()
         {
             InitializeComponent();
+
+            // CAPA 3 (defensa en profundidad): ver el mismo comentario en frmUsuarios.cs
+            if (!SeguridadHelper.PuedeAccederModuloSeguridad(Sesion.IdPerfil))
+            {
+                this.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show("No tenés permisos para acceder a este módulo.",
+                        "Acceso denegado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    this.Close();
+                }));
+                return;
+            }
+
             dgvPerfiles.CellClick += dgvPerfiles_CellClick;
             btnNuevo.Click += btnNuevo_Click;
             btnGuardar.Click += btnGuardar_Click;

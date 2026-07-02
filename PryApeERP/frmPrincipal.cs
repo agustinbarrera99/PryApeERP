@@ -20,27 +20,57 @@ namespace PryApeERP
             lblUsuarioActivo.Text = $"👤 {UsuarioActivo}";
             ActualizarReloj();
 
-            mnuAuditoria.Visible = (PerfilActivo == 2);  
+            // CAPA 1: ocultar en el menú los módulos restringidos a Admin/RRHH.
+            bool puedeGestionSeguridad = SeguridadHelper.PuedeAccederModuloSeguridad(PerfilActivo);
+            mnuUsuarios.Visible = puedeGestionSeguridad;
+            mnuPerfiles.Visible = puedeGestionSeguridad;
+            mnuAuditoria.Visible = puedeGestionSeguridad;
+            mnuRelUsuarioPerfil.Visible = puedeGestionSeguridad;
 
             MostrarBienvenida();
         }
 
         private void mnuAuditoria_Click(object sender, EventArgs e)
         {
-            AbrirFormulario(new frmAuditoria()); 
+            // CAPA 2: revalidar el permiso antes de abrir, aunque el ítem esté oculto.
+            if (!SeguridadHelper.PuedeAccederModuloSeguridad(PerfilActivo))
+            {
+                MessageBox.Show("No tenés permisos para acceder a este módulo.",
+                    "Acceso denegado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            AbrirFormulario(new frmAuditoria());
         }
         private void mnuUsuarios_Click(object sender, EventArgs e)
         {
+            if (!SeguridadHelper.PuedeAccederModuloSeguridad(PerfilActivo))
+            {
+                MessageBox.Show("No tenés permisos para acceder a este módulo.",
+                    "Acceso denegado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             AbrirFormulario(new frmUsuarios());
         }
 
         private void mnuPerfiles_Click(object sender, EventArgs e)
         {
+            if (!SeguridadHelper.PuedeAccederModuloSeguridad(PerfilActivo))
+            {
+                MessageBox.Show("No tenés permisos para acceder a este módulo.",
+                    "Acceso denegado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             AbrirFormulario(new frmPerfiles());
         }
 
         private void mnuRelUsuarioPerfil_Click(object sender, EventArgs e)
         {
+            if (!SeguridadHelper.PuedeAccederModuloSeguridad(PerfilActivo))
+            {
+                MessageBox.Show("No tenés permisos para acceder a este módulo.",
+                    "Acceso denegado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             AbrirFormulario(new frmRelUsuarioPerfil());
         }
 
@@ -114,20 +144,23 @@ namespace PryApeERP
                 WrapContents = true
             };
 
-            flp.Controls.Add(CrearTarjeta("👤", "Usuarios",
-                "Altas, bajas y modificaciones\nde cuentas de acceso.",
-                Color.FromArgb(59, 130, 246), mnuUsuarios_Click));
+            // Tarjetas restringidas a Admin/RRHH
+            bool puedeGestionSeguridad = SeguridadHelper.PuedeAccederModuloSeguridad(PerfilActivo);
 
-            flp.Controls.Add(CrearTarjeta("🛡️", "Perfiles",
-                "Definición de roles y\nniveles de acceso.",
-                Color.FromArgb(16, 185, 129), mnuPerfiles_Click));
-
-            flp.Controls.Add(CrearTarjeta("🔗", "Asignación",
-                "Vincular usuarios con\nsus perfiles de seguridad.",
-                Color.FromArgb(245, 158, 11), mnuRelUsuarioPerfil_Click));
-
-            if (PerfilActivo == 2)
+            if (puedeGestionSeguridad)
             {
+                flp.Controls.Add(CrearTarjeta("👤", "Usuarios",
+                    "Altas, bajas y modificaciones\nde cuentas de acceso.",
+                    Color.FromArgb(59, 130, 246), mnuUsuarios_Click));
+
+                flp.Controls.Add(CrearTarjeta("🛡️", "Perfiles",
+                    "Definición de roles y\nniveles de acceso.",
+                    Color.FromArgb(16, 185, 129), mnuPerfiles_Click));
+
+                flp.Controls.Add(CrearTarjeta("🔗", "Asignación",
+                    "Vincular usuarios con\nsus perfiles de seguridad.",
+                    Color.FromArgb(245, 158, 11), mnuRelUsuarioPerfil_Click));
+
                 flp.Controls.Add(CrearTarjeta("🔍", "Auditoría",
                     "Historial de intentos\nde inicio de sesión.",
                     Color.FromArgb(139, 92, 246), mnuAuditoria_Click));

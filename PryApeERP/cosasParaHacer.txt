@@ -1,9 +1,9 @@
-Mejorar las validaciones al crear y editar un usuario.
+Hacer que si el usuario esta deshabilitado no pueda iniciar sesión y le muestre el messagebox correspondiente. Listo
 
-Agregar posibilidad de mas de un domicilio.
+Agregar mas provincias y localidades  
 
-Eliminar el boton para eliminar usuarios.
+Agregar redes sociales 
 
-Agregar boton editar usuario.
+Hacer que la contraseña por defecto al crear un usuario, sea el la primer letra del nombre mas el apellido + los últimos dos dígitos del dni. Listo
 
-Agregar contacto al usuario.
+Hacer que el usuario común no pueda ingresar a la sección de asignación de roles, ni a la de usuarios ni perfiles.  

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace PryApeERP
@@ -10,11 +11,17 @@ namespace PryApeERP
         private readonly int _idUsuario;
         private readonly UsuarioDAO _dao = new UsuarioDAO();
         private readonly DomicilioDAO _domicilioDao = new DomicilioDAO();
+        private readonly RedSocialDAO _redDao = new RedSocialDAO();
 
         // Lista en memoria de domicilios que el usuario va armando antes de guardar
         private readonly List<DomicilioItem> _domicilios = new List<DomicilioItem>();
         // Contador negativo para IDs temporales (nuevos domicilios no guardados aún)
         private int _idTemporal = -1;
+
+        // Lista en memoria de redes sociales que el usuario va armando antes de guardar
+        private readonly List<RedSocialItem> _redesSociales = new List<RedSocialItem>();
+        // Contador negativo para IDs temporales (nuevas redes no guardadas aún)
+        private int _idTemporalRed = -1;
 
         public frmUsuarioModal(int idUsuario)
         {
@@ -25,19 +32,36 @@ namespace PryApeERP
         private void frmUsuarioModal_Load(object sender, EventArgs e)
         {
             ConfigurarGrillaDomicilios();
+            ConfigurarGrillaRedes();
 
             if (_idUsuario > 0)
             {
                 this.Text = "Editar Usuario";
                 lblTitulo.Text = "  ✏️   Editar Usuario";
-                lblPassword.Text = "Nueva contraseña (dejar vacío para no cambiar)";
+                // Ya no tocamos lblPassword.Text (queda fijo "Contraseña *" siempre).
+                // En su lugar mostramos el hint aparte, que no compite por ancho con lblDni.
+                lblPassword.Visible = true;
+                txtPassword.Visible = true;
+                lblPasswordHint.Text = "Dejar vacío para no cambiar";
+                lblPasswordHint.Location = new System.Drawing.Point(
+                    lblPasswordHint.Location.X, txtPassword.Bottom + 4);
+                lblPasswordHint.Visible = true;
                 CargarDatosUsuario();
                 CargarDomiciliosExistentes();
+                CargarRedesExistentes();
             }
             else
             {
                 this.Text = "Nuevo Usuario";
                 lblTitulo.Text = "  ➕   Nuevo Usuario";
+                // La contraseña ya no la elige quien crea el usuario: se genera
+                // sola a partir de nombre/apellido/DNI. Ocultamos el campo para
+                // que no parezca editable, y usamos el hint para avisarlo.
+                lblPassword.Visible = false;
+                txtPassword.Visible = false;
+                lblPasswordHint.Text = "La contraseña se genera automáticamente";
+                lblPasswordHint.Location = lblPassword.Location;
+                lblPasswordHint.Visible = true;
             }
         }
 
@@ -236,6 +260,143 @@ namespace PryApeERP
         }
 
         // ══════════════════════════════════════════════════════
+        // GRILLA DE REDES SOCIALES
+        // ══════════════════════════════════════════════════════
+
+        private void ConfigurarGrillaRedes()
+        {
+            dgvRedes.AutoGenerateColumns = false;
+            dgvRedes.Columns.Clear();
+
+            dgvRedes.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "colRed",
+                HeaderText = "Red Social",
+                DataPropertyName = "NombreRed",
+                Width = 120
+            });
+            dgvRedes.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "colUrl",
+                HeaderText = "URL / Usuario",
+                DataPropertyName = "UrlPerfil",
+                Width = 220
+            });
+        }
+
+        private void CargarRedesExistentes()
+        {
+            try
+            {
+                var dt = _redDao.ObtenerPorUsuario(_idUsuario);
+                _redesSociales.Clear();
+
+                foreach (DataRow r in dt.Rows)
+                {
+                    _redesSociales.Add(new RedSocialItem
+                    {
+                        Id = Convert.ToInt32(r["Id"]),
+                        IdRed = Convert.ToInt32(r["Id_red"]),
+                        NombreRed = r["nombre"].ToString(),
+                        UrlPerfil = r["url_perfil"].ToString()
+                    });
+                }
+
+                RefrescarGrillaRedes();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al cargar redes sociales: " + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void RefrescarGrillaRedes()
+        {
+            var bs = new BindingSource();
+            bs.DataSource = new System.ComponentModel.BindingList<RedSocialItem>(_redesSociales);
+            dgvRedes.DataSource = bs;
+        }
+
+        private RedSocialItem ObtenerRedSeleccionada()
+        {
+            if (dgvRedes.CurrentRow == null) return null;
+            int idx = dgvRedes.CurrentRow.Index;
+            if (idx < 0 || idx >= _redesSociales.Count) return null;
+            return _redesSociales[idx];
+        }
+
+        private void dgvRedes_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0)
+                btnEditarRed_Click(sender, EventArgs.Empty);
+        }
+
+        // ══════════════════════════════════════════════════════
+        // BOTONES DE REDES SOCIALES
+        // ══════════════════════════════════════════════════════
+
+        private void btnAgregarRed_Click(object sender, EventArgs e)
+        {
+            var idsUsados = _redesSociales.Select(r => r.IdRed).ToList();
+
+            using (var frm = new frmRedSocialModal(null, idsUsados))
+            {
+                if (frm.ShowDialog(this) != DialogResult.OK) return;
+
+                var nueva = frm.Resultado;
+                nueva.Id = _idTemporalRed--; // ID temporal negativo
+                _redesSociales.Add(nueva);
+                RefrescarGrillaRedes();
+            }
+        }
+
+        private void btnEditarRed_Click(object sender, EventArgs e)
+        {
+            var red = ObtenerRedSeleccionada();
+            if (red == null)
+            {
+                MostrarAviso("Seleccioná una red social para editar.");
+                return;
+            }
+
+            // Excluye todas las usadas menos la que se está editando
+            var idsUsados = _redesSociales.Where(r => r != red).Select(r => r.IdRed).ToList();
+
+            using (var frm = new frmRedSocialModal(red, idsUsados))
+            {
+                if (frm.ShowDialog(this) != DialogResult.OK) return;
+
+                var editada = frm.Resultado;
+                editada.Id = red.Id; // conserva el ID original
+
+                int idx = _redesSociales.IndexOf(red);
+                _redesSociales[idx] = editada;
+                RefrescarGrillaRedes();
+            }
+        }
+
+        private void btnQuitarRed_Click(object sender, EventArgs e)
+        {
+            var red = ObtenerRedSeleccionada();
+            if (red == null)
+            {
+                MostrarAviso("Seleccioná una red social para quitar.");
+                return;
+            }
+
+            using (var dlg = new frmConfirmacion(
+                "¿Quitar red social?",
+                $"Se quitará «{red.NombreRed}»."))
+            {
+                if (dlg.ShowDialog(this) != DialogResult.Yes) return;
+            }
+
+            _redesSociales.Remove(red);
+            RefrescarGrillaRedes();
+        }
+
+        // ══════════════════════════════════════════════════════
         // VALIDACIÓN
         // ══════════════════════════════════════════════════════
 
@@ -250,14 +411,19 @@ namespace PryApeERP
             if (string.IsNullOrWhiteSpace(txtMail.Text) || !txtMail.Text.Contains("@"))
             { MostrarAviso("Ingresá un email válido."); txtMail.Focus(); return false; }
 
-            if (_idUsuario == 0 && string.IsNullOrWhiteSpace(txtPassword.Text))
-            { MostrarAviso("La contraseña es obligatoria para nuevos usuarios."); txtPassword.Focus(); return false; }
+            if (_idUsuario == 0 && string.IsNullOrWhiteSpace(txtDni.Text))
+            { MostrarAviso("El DNI es obligatorio: se usa para generar la contraseña."); txtDni.Focus(); return false; }
 
             if (_domicilios.Count == 0)
             { MostrarAviso("Agregá al menos un domicilio."); return false; }
 
             if (!_domicilios.Exists(d => d.Principal))
             { MostrarAviso("Marcá un domicilio como principal."); return false; }
+
+            // Las redes sociales son opcionales. Si querés forzar al menos una,
+            // descomentá lo siguiente (misma lógica que domicilios):
+            // if (_redesSociales.Count == 0)
+            // { MostrarAviso("Agregá al menos una red social."); return false; }
 
             return true;
         }
@@ -275,20 +441,23 @@ namespace PryApeERP
                 string nombre = txtNombre.Text.Trim();
                 string apellido = txtApellido.Text.Trim();
                 string mail = txtMail.Text.Trim();
-                string password = txtPassword.Text.Trim();
                 bool activo = chkActivo.Checked;
                 string dni = txtDni.Text.Trim();
                 string telefono = txtTelefono.Text.Trim();
 
                 int idFinal;
+                string passwordGenerada = null;
 
                 if (_idUsuario == 0)
                 {
-                    // Insertar usuario y obtener el ID generado
-                    idFinal = _dao.Insertar(nombre, apellido, mail, password, activo, dni, telefono);
+                    // La contraseña no la tipea quien crea el usuario: se arma
+                    // sola con la regla inicial + apellido + últimos 3 dígitos del DNI.
+                    passwordGenerada = GenerarPassword(nombre, apellido, dni);
+                    idFinal = _dao.Insertar(nombre, apellido, mail, passwordGenerada, activo, dni, telefono);
                 }
                 else
                 {
+                    string password = txtPassword.Text.Trim();
                     idFinal = _idUsuario;
                     _dao.Actualizar(_idUsuario, nombre, apellido, mail, password, activo, dni, telefono);
                 }
@@ -307,6 +476,20 @@ namespace PryApeERP
                         dom.Principal);
                 }
 
+                // Estrategia borrar-y-reinsertar para las redes sociales, igual que domicilios
+                _redDao.EliminarPorUsuario(idFinal);
+                foreach (var red in _redesSociales)
+                {
+                    _redDao.InsertarUsuarioRed(idFinal, red.IdRed, red.UrlPerfil);
+                }
+
+                if (passwordGenerada != null)
+                {
+                    MessageBox.Show(
+                        $"Usuario creado.\nContraseña generada: {passwordGenerada}",
+                        "Usuario creado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }
@@ -315,6 +498,30 @@ namespace PryApeERP
                 MessageBox.Show("Error al guardar: " + ex.Message,
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        // ══════════════════════════════════════════════════════
+        // GENERACIÓN DE CONTRASEÑA
+        // ══════════════════════════════════════════════════════
+
+        // Regla: primera letra del nombre (mayúscula) + apellido + últimos 3
+        // dígitos del DNI. Si el DNI tiene menos de 3 dígitos, se usan todos
+        // los que haya. Se descarta cualquier carácter no numérico del DNI
+        // (puntos, espacios, etc.) antes de tomar los últimos 3.
+        private static string GenerarPassword(string nombre, string apellido, string dni)
+        {
+            string inicial = nombre.Trim().Length > 0
+                ? nombre.Trim().Substring(0, 1).ToUpper()
+                : "";
+
+            string apellidoLimpio = apellido.Trim();
+
+            string dniSoloDigitos = new string((dni ?? "").Where(char.IsDigit).ToArray());
+            string ultimos3 = dniSoloDigitos.Length >= 3
+                ? dniSoloDigitos.Substring(dniSoloDigitos.Length - 3)
+                : dniSoloDigitos;
+
+            return inicial + apellidoLimpio + ultimos3;
         }
 
         private void btnCancelar_Click(object sender, EventArgs e)
@@ -335,22 +542,6 @@ namespace PryApeERP
         {
             timerToast.Stop();
             lblToast.Visible = false;
-        }
-    }
-
-    [System.Runtime.InteropServices.ComVisible(true)]
-    public class MapaScriptHelper
-    {
-        private readonly frmDomicilioModal _form;
-
-        public MapaScriptHelper(frmDomicilioModal form)
-        {
-            _form = form;
-        }
-
-        public void SetCoordenadas(string lat, string lng)
-        {
-            _form.RecibirCoordenadas(lat, lng);
         }
     }
 }

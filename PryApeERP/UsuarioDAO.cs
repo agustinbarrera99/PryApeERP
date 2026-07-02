@@ -1,9 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.OleDb;
 
 namespace PryApeERP
 {
+    // Resultado posible de un intento de login. Antes esto era un bool implícito
+    // (idUsuario > 0) que no permitía distinguir "credenciales mal" de "usuario
+    // deshabilitado". Ahora el DAO devuelve explícitamente cuál fue el motivo.
+    public enum ResultadoLogin
+    {
+        Ok,
+        CredencialesInvalidas,
+        UsuarioInactivo
+    }
+
     public class UsuarioDAO
     {
         public DataTable ObtenerTodos()
@@ -24,10 +35,14 @@ namespace PryApeERP
             dt.Columns.Add("localidad", typeof(string));
             dt.Columns.Add("provincia", typeof(string));
 
-            // Por cada usuario, busca su domicilio principal
+            // Agrega columna para las redes sociales (nombres concatenados)
+            dt.Columns.Add("redes", typeof(string));
+
+            // Por cada usuario, busca su domicilio principal y sus redes sociales
             foreach (DataRow row in dt.Rows)
             {
                 int idUsuario = Convert.ToInt32(row["Id_usuario"]);
+
                 DataRow dom = ObtenerDomicilioPrincipal(idUsuario);
                 if (dom != null)
                 {
@@ -35,6 +50,8 @@ namespace PryApeERP
                     row["localidad"] = dom["localidad"];
                     row["provincia"] = dom["provincia"];
                 }
+
+                row["redes"] = ObtenerRedesConcatenadas(idUsuario);
             }
 
             return dt;
@@ -56,6 +73,32 @@ namespace PryApeERP
                 new OleDbDataAdapter(cmd).Fill(dt);
             }
             return dt.Rows.Count > 0 ? dt.Rows[0] : null;
+        }
+
+        // Devuelve los nombres de las redes sociales del usuario, separados por
+        // coma (ej: "Instagram, LinkedIn, Twitter"), para mostrar en la grilla
+        // sin tener que traer también las URLs (que suelen ser largas).
+        // Access/OleDb no tiene GROUP_CONCAT, así que se arma el string en código.
+        public string ObtenerRedesConcatenadas(int idUsuario)
+        {
+            var nombres = new List<string>();
+            using (var cx = new clsConexion())
+            {
+                string sql = @"SELECT rs.nombre
+                       FROM usuario_red ur
+                       INNER JOIN redes_sociales rs ON ur.Id_red = rs.Id
+                       WHERE ur.Id_usuario = ?
+                       ORDER BY rs.nombre";
+                var cmd = new OleDbCommand(sql, cx.ObtenerConexion());
+                cmd.Parameters.Add("?", OleDbType.Integer).Value = idUsuario;
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                        nombres.Add(reader["nombre"].ToString());
+                }
+            }
+            return string.Join(", ", nombres);
         }
 
         public int Insertar(string nombre, string apellido, string mail, string password,
@@ -81,25 +124,40 @@ namespace PryApeERP
             }
         }
 
-        public (int idUsuario, int idPerfil) ValidarLogin(string mail, string password)
+        // FIX: ya no filtramos por "activo" en el WHERE. Si lo hacíamos ahí,
+        // un usuario deshabilitado simplemente no devolvía fila y quedaba
+        // indistinguible de "mail/contraseña incorrectos". Ahora buscamos por
+        // mail+password (que es lo que realmente identifica credenciales
+        // válidas) y chequeamos "activo" en código aparte, para poder devolver
+        // un resultado diferenciado.
+        public ResultadoLogin ValidarLogin(string mail, string password, out int idUsuario, out int idPerfil)
         {
+            idUsuario = -1;
+            idPerfil = -1;
+
             using (var cx = new clsConexion())
             {
-                string sql = @"SELECT u.Id_usuario, r.Id_perfil 
+                string sql = @"SELECT u.Id_usuario, u.activo, r.Id_perfil 
                FROM usuario u
                LEFT JOIN usuario_perfil r ON u.Id_usuario = r.Id_usuario
-               WHERE u.mail = ? AND u.Contraseña = ? AND u.activo = -1";
+               WHERE u.mail = ? AND u.Contraseña = ?";
                 var cmd = new OleDbCommand(sql, cx.ObtenerConexion());
                 cmd.Parameters.AddWithValue("?", mail);
                 cmd.Parameters.AddWithValue("?", password);
 
                 using (var reader = cmd.ExecuteReader())
                 {
-                    if (reader.Read())
-                        return (Convert.ToInt32(reader["Id_usuario"]),
-                                reader["Id_perfil"] == DBNull.Value ? 0 : Convert.ToInt32(reader["Id_perfil"]));
+                    if (!reader.Read())
+                        return ResultadoLogin.CredencialesInvalidas;
+
+                    bool activo = Convert.ToBoolean(reader["activo"]);
+                    if (!activo)
+                        return ResultadoLogin.UsuarioInactivo;
+
+                    idUsuario = Convert.ToInt32(reader["Id_usuario"]);
+                    idPerfil = reader["Id_perfil"] == DBNull.Value ? 0 : Convert.ToInt32(reader["Id_perfil"]);
+                    return ResultadoLogin.Ok;
                 }
-                return (-1, -1);
             }
         }
 

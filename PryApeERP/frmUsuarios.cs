@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Data;
 using System.Windows.Forms;
-
 namespace PryApeERP
 {
     public partial class frmUsuarios : Form
@@ -9,14 +8,28 @@ namespace PryApeERP
         private int _idSeleccionado = 0;
         private readonly UsuarioDAO _dao = new UsuarioDAO();
         private readonly RedSocialDAO _redDao = new RedSocialDAO();
-
         public frmUsuarios()
         {
             InitializeComponent();
             UIHelper.AplicarIcono(this);
+
+            // CAPA 3 (defensa en profundidad): si alguien llega a instanciar este
+            // formulario aunque el menú esté oculto y el click bloqueado, se
+            // vuelve a chequear acá y se cierra solo. BeginInvoke difiere el
+            // cierre hasta que el formulario ya esté completamente mostrado
+            // (funciona igual si se abre embebido en frmPrincipal.pnlContenido).
+            if (!SeguridadHelper.PuedeAccederModuloSeguridad(Sesion.IdPerfil))
+            {
+                this.BeginInvoke(new Action(() =>
+                {
+                    MessageBox.Show("No tenés permisos para acceder a este módulo.",
+                        "Acceso denegado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    this.Close();
+                }));
+                return;
+            }
         }
 
-     
         private void frmUsuarios_Load(object sender, EventArgs e)
         {
             CargarGrilla();
@@ -27,12 +40,10 @@ namespace PryApeERP
             {
                 var dt = _dao.ObtenerTodos();
                 dgvUsuarios.DataSource = dt;
-
                 string[] ocultar = { "Id_usuario", "Contraseña", "dni", "telefono" };
                 foreach (var col in ocultar)
                     if (dgvUsuarios.Columns[col] != null)
                         dgvUsuarios.Columns[col].Visible = false;
-
                 RenombrarColumna("nombre", "Nombre");
                 RenombrarColumna("apellido", "Apellido");
                 RenombrarColumna("mail", "Email");
@@ -46,13 +57,11 @@ namespace PryApeERP
                 MostrarError("Error al cargar usuarios", ex.Message);
             }
         }
-
         private void RenombrarColumna(string nombre, string header)
         {
             if (dgvUsuarios.Columns[nombre] != null)
                 dgvUsuarios.Columns[nombre].HeaderText = header;
         }
-
         private void btnNuevo_Click(object sender, EventArgs e)
         {
             using (var frmModal = new frmUsuarioModal(0)) // 0 significa nuevo usuario
@@ -60,18 +69,15 @@ namespace PryApeERP
                 if (frmModal.ShowDialog(this) == DialogResult.OK)
                 {
                     MostrarExito("Usuario creado correctamente.");
-                    CargarGrilla(); 
+                    CargarGrilla();
                 }
             }
         }
-
         private void dgvUsuarios_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
-
             var fila = dgvUsuarios.Rows[e.RowIndex];
             _idSeleccionado = Convert.ToInt32(fila.Cells["Id_usuario"].Value);
-
             using (var frmModal = new frmUsuarioModal(_idSeleccionado)) // Pasa el ID seleccionado
             {
                 if (frmModal.ShowDialog(this) == DialogResult.OK)
@@ -81,41 +87,6 @@ namespace PryApeERP
                 }
             }
         }
-        private void btnEliminar_Click(object sender, EventArgs e)
-        {
-            if (dgvUsuarios.CurrentRow == null)
-            {
-                MostrarAviso("Seleccioná un usuario de la lista primero.");
-                return;
-            }
-
-            var fila = dgvUsuarios.CurrentRow;
-            _idSeleccionado = Convert.ToInt32(fila.Cells["Id_usuario"].Value);
-            string nombreCompleto = $"{fila.Cells["nombre"].Value} {fila.Cells["apellido"].Value}";
-
-            using (var dlg = new frmConfirmacion(
-                "¿Eliminar usuario?",
-                $"Se eliminará al usuario «{nombreCompleto}» y todas sus redes sociales. Esta acción no se puede deshacer."))
-            {
-                if (dlg.ShowDialog(this) == DialogResult.Yes)
-                {
-                    try
-                    {
-                        _redDao.EliminarPorUsuario(_idSeleccionado);
-                        _dao.Eliminar(_idSeleccionado);
-
-                        MostrarExito("Usuario eliminado correctamente.");
-                        CargarGrilla();
-                        _idSeleccionado = 0;
-                    }
-                    catch (Exception ex)
-                    {
-                        MostrarError("No se pudo eliminar el usuario", ex.Message);
-                    }
-                }
-            }
-        }
-
         private void MostrarExito(string mensaje)
         {
             lblToast.Text = "✔  " + mensaje;
@@ -123,7 +94,6 @@ namespace PryApeERP
             lblToast.Visible = true;
             timerToast.Start();
         }
-
         private void MostrarAviso(string mensaje)
         {
             lblToast.Text = "ℹ  " + mensaje;
@@ -131,7 +101,6 @@ namespace PryApeERP
             lblToast.Visible = true;
             timerToast.Start();
         }
-
         private void MostrarError(string titulo, string detalle)
         {
             lblToast.Text = $"✖  {titulo}: {detalle}";
@@ -139,7 +108,6 @@ namespace PryApeERP
             lblToast.Visible = true;
             timerToast.Start();
         }
-
         private void timerToast_Tick(object sender, EventArgs e)
         {
             timerToast.Stop();
