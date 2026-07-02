@@ -24,6 +24,13 @@
             this.btnActualizar = new System.Windows.Forms.Button();
             this.btnLimpiar = new System.Windows.Forms.Button();
 
+            this.chkFiltrarFecha = new System.Windows.Forms.CheckBox();
+            this.lblDesde = new System.Windows.Forms.Label();
+            this.dtpDesde = new System.Windows.Forms.DateTimePicker();
+            this.lblHasta = new System.Windows.Forms.Label();
+            this.dtpHasta = new System.Windows.Forms.DateTimePicker();
+            this.btnFiltrarFecha = new System.Windows.Forms.Button();
+
             this.dgvAuditoria = new System.Windows.Forms.DataGridView();
             this.pnlFooter = new System.Windows.Forms.Panel();
             this.lblContador = new System.Windows.Forms.Label();
@@ -69,19 +76,25 @@
             this.pnlToolbar.Controls.Add(this.txtBuscar);
             this.pnlToolbar.Controls.Add(this.btnActualizar);
             this.pnlToolbar.Controls.Add(this.btnLimpiar);
+            this.pnlToolbar.Controls.Add(this.chkFiltrarFecha);
+            this.pnlToolbar.Controls.Add(this.lblDesde);
+            this.pnlToolbar.Controls.Add(this.dtpDesde);
+            this.pnlToolbar.Controls.Add(this.lblHasta);
+            this.pnlToolbar.Controls.Add(this.dtpHasta);
+            this.pnlToolbar.Controls.Add(this.btnFiltrarFecha);
             this.pnlToolbar.Dock = System.Windows.Forms.DockStyle.Top;
-            this.pnlToolbar.Height = 60;
+            this.pnlToolbar.Height = 100;
 
             // lblBuscar
             this.lblBuscar.AutoSize = true;
             this.lblBuscar.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblBuscar.ForeColor = System.Drawing.Color.FromArgb(107, 114, 128);
-            this.lblBuscar.Location = new System.Drawing.Point(20, 22);
+            this.lblBuscar.Location = new System.Drawing.Point(20, 16);
             this.lblBuscar.Text = "🔎 Buscar por correo:";
 
             // txtBuscar
             this.txtBuscar.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.txtBuscar.Location = new System.Drawing.Point(158, 18);
+            this.txtBuscar.Location = new System.Drawing.Point(158, 12);
             this.txtBuscar.Size = new System.Drawing.Size(260, 25);
             this.txtBuscar.Name = "txtBuscar";
             this.txtBuscar.TextChanged += new System.EventHandler(this.txtBuscar_TextChanged);
@@ -92,7 +105,7 @@
             this.btnActualizar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnActualizar.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.btnActualizar.ForeColor = System.Drawing.Color.White;
-            this.btnActualizar.Location = new System.Drawing.Point(438, 16);
+            this.btnActualizar.Location = new System.Drawing.Point(438, 10);
             this.btnActualizar.Size = new System.Drawing.Size(110, 30);
             this.btnActualizar.Text = "⟳  Actualizar";
             this.btnActualizar.UseVisualStyleBackColor = false;
@@ -104,11 +117,59 @@
             this.btnLimpiar.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLimpiar.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.btnLimpiar.ForeColor = System.Drawing.Color.White;
-            this.btnLimpiar.Location = new System.Drawing.Point(558, 16);
+            this.btnLimpiar.Location = new System.Drawing.Point(558, 10);
             this.btnLimpiar.Size = new System.Drawing.Size(90, 30);
             this.btnLimpiar.Text = "✕  Limpiar";
             this.btnLimpiar.UseVisualStyleBackColor = false;
             this.btnLimpiar.Click += new System.EventHandler(this.btnLimpiar_Click);
+
+            // chkFiltrarFecha
+            this.chkFiltrarFecha.AutoSize = true;
+            this.chkFiltrarFecha.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.chkFiltrarFecha.ForeColor = System.Drawing.Color.FromArgb(31, 41, 55);
+            this.chkFiltrarFecha.Location = new System.Drawing.Point(20, 68);
+            this.chkFiltrarFecha.Text = "Filtrar por fecha";
+            this.chkFiltrarFecha.CheckedChanged += new System.EventHandler(this.FiltroFecha_Changed);
+
+            // lblDesde
+            this.lblDesde.AutoSize = true;
+            this.lblDesde.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblDesde.ForeColor = System.Drawing.Color.FromArgb(107, 114, 128);
+            this.lblDesde.Location = new System.Drawing.Point(158, 68);
+            this.lblDesde.Text = "Desde:";
+
+            // dtpDesde
+            this.dtpDesde.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.dtpDesde.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dtpDesde.Location = new System.Drawing.Point(210, 64);
+            this.dtpDesde.Size = new System.Drawing.Size(110, 23);
+            this.dtpDesde.Value = System.DateTime.Today.AddDays(-7);
+
+            // lblHasta
+            this.lblHasta.AutoSize = true;
+            this.lblHasta.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblHasta.ForeColor = System.Drawing.Color.FromArgb(107, 114, 128);
+            this.lblHasta.Location = new System.Drawing.Point(334, 68);
+            this.lblHasta.Text = "Hasta:";
+
+            // dtpHasta
+            this.dtpHasta.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.dtpHasta.Format = System.Windows.Forms.DateTimePickerFormat.Short;
+            this.dtpHasta.Location = new System.Drawing.Point(384, 64);
+            this.dtpHasta.Size = new System.Drawing.Size(110, 23);
+            this.dtpHasta.Value = System.DateTime.Today;
+
+            // btnFiltrarFecha
+            this.btnFiltrarFecha.BackColor = System.Drawing.Color.FromArgb(34, 197, 94);
+            this.btnFiltrarFecha.FlatAppearance.BorderSize = 0;
+            this.btnFiltrarFecha.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnFiltrarFecha.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnFiltrarFecha.ForeColor = System.Drawing.Color.White;
+            this.btnFiltrarFecha.Location = new System.Drawing.Point(510, 63);
+            this.btnFiltrarFecha.Size = new System.Drawing.Size(80, 26);
+            this.btnFiltrarFecha.Text = "✓ OK";
+            this.btnFiltrarFecha.UseVisualStyleBackColor = false;
+            this.btnFiltrarFecha.Click += new System.EventHandler(this.btnFiltrarFecha_Click);
 
             // ── dgvAuditoria ───────────────────────────────────────
             this.dgvAuditoria.AllowUserToAddRows = false;
@@ -185,6 +246,13 @@
         private System.Windows.Forms.TextBox txtBuscar;
         private System.Windows.Forms.Button btnActualizar;
         private System.Windows.Forms.Button btnLimpiar;
+
+        private System.Windows.Forms.CheckBox chkFiltrarFecha;
+        private System.Windows.Forms.Label lblDesde;
+        private System.Windows.Forms.DateTimePicker dtpDesde;
+        private System.Windows.Forms.Label lblHasta;
+        private System.Windows.Forms.DateTimePicker dtpHasta;
+        private System.Windows.Forms.Button btnFiltrarFecha;
 
         private System.Windows.Forms.DataGridView dgvAuditoria;
 
